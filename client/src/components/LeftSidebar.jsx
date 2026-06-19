@@ -1,4 +1,8 @@
+import { useNavigate } from 'react-router-dom'
+
 function LeftSidebar() {
+  const navigate = useNavigate()
+
   return (
     <div style={{
       position: 'fixed',
@@ -12,15 +16,17 @@ function LeftSidebar() {
     }}>
 
       {/* Profile link */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '8px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        marginBottom: '4px'
-      }}>
+      <div
+        onClick={() => navigate('/profile')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '8px',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          marginBottom: '4px'
+        }}>
         <div style={{
           backgroundColor: '#e4e6eb',
           borderRadius: '50%',
