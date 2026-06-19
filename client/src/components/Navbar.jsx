@@ -1,4 +1,18 @@
+import { useNavigate } from 'react-router-dom'
+
 function Navbar() {
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/')
+  }
+
+  // Get logged-in user's name from localStorage
+  const userString = localStorage.getItem('user')
+  const user = userString ? JSON.parse(userString) : null
+
   return (
     <div style={{
       position: 'fixed',
@@ -37,22 +51,42 @@ function Navbar() {
         />
       </div>
 
-      {/* Right side - User info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{
-          backgroundColor: '#e4e6eb',
-          borderRadius: '50%',
-          width: '40px',
-          height: '40px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 'bold',
-          cursor: 'pointer'
-        }}>
-          U
+      {/* Right side - User info + Logout */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            backgroundColor: '#e4e6eb',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            cursor: 'pointer'
+          }}>
+            {user ? user.firstName[0] : 'U'}
+          </div>
+          <span style={{ fontWeight: '600', fontSize: '15px' }}>
+            {user ? user.firstName : 'User'}
+          </span>
         </div>
-        <span style={{ fontWeight: '600', fontSize: '15px' }}>User</span>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          style={{
+            backgroundColor: '#e4e6eb',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '8px 16px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          Logout
+        </button>
       </div>
 
     </div>

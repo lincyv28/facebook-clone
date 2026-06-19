@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import axios from 'axios'
 
 function Login() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const validateForm = () => {
     let newErrors = {}
@@ -24,11 +28,30 @@ function Login() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const isValid = validateForm()
-    if (isValid) {
-      alert('Login form is valid! (Backend connection comes in Module 5)')
+    if (!isValid) return
+
+    setLoading(true)
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
+        email,
+        password
+      })
+
+      // Save token and user info in browser storage
+      localStorage.setItem('token', response.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+
+      // Redirect to home page
+      navigate('/home')
+
+    } catch (error) {
+      setErrors({ form: error.response?.data?.message || 'Login failed' })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -58,6 +81,21 @@ function Login() {
         }}>
           facebook
         </div>
+
+        {/* Form level error */}
+        {errors.form && (
+          <div style={{
+            backgroundColor: '#ffebe8',
+            color: '#e41e3f',
+            padding: '10px',
+            borderRadius: '6px',
+            fontSize: '14px',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            {errors.form}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
 
@@ -110,6 +148,7 @@ function Login() {
           {/* Login button */}
           <button
             type="submit"
+            disabled={loading}
             style={{
               width: '100%',
               backgroundColor: '#1877f2',
@@ -119,11 +158,11 @@ function Login() {
               fontWeight: '600',
               border: 'none',
               borderRadius: '6px',
-              cursor: 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               marginBottom: '16px'
             }}
           >
-            Log In
+            {loading ? 'Logging in...' : 'Log In'}
           </button>
 
           {/* Divider */}
@@ -134,21 +173,23 @@ function Login() {
 
           {/* Create account button */}
           <div style={{ textAlign: 'center' }}>
-            <button
-              type="button"
-              style={{
-                backgroundColor: '#42b72a',
-                color: '#ffffff',
-                padding: '12px 16px',
-                fontSize: '17px',
-                fontWeight: '600',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
-              Create new account
-            </button>
+            <Link to="/register">
+              <button
+                type="button"
+                style={{
+                  backgroundColor: '#42b72a',
+                  color: '#ffffff',
+                  padding: '12px 16px',
+                  fontSize: '17px',
+                  fontWeight: '600',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Create new account
+              </button>
+            </Link>
           </div>
 
         </form>

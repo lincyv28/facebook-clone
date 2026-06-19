@@ -1,12 +1,16 @@
 import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import axios from 'axios'
 
 function Register() {
+  const navigate = useNavigate()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const validateForm = () => {
     let newErrors = {}
@@ -41,11 +45,28 @@ function Register() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const isValid = validateForm()
-    if (isValid) {
-      alert('Register form is valid! (Backend connection comes in Module 5)')
+    if (!isValid) return
+
+    setLoading(true)
+
+    try {
+      await axios.post('http://localhost:5000/api/auth/register', {
+        firstName,
+        lastName,
+        email,
+        password
+      })
+
+      // Redirect to login page after successful registration
+      navigate('/')
+
+    } catch (error) {
+      setErrors({ form: error.response?.data?.message || 'Registration failed' })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -88,6 +109,21 @@ function Register() {
         </p>
 
         <div style={{ borderTop: '1px solid #dadde1', marginBottom: '16px' }} />
+
+        {/* Form level error */}
+        {errors.form && (
+          <div style={{
+            backgroundColor: '#ffebe8',
+            color: '#e41e3f',
+            padding: '10px',
+            borderRadius: '6px',
+            fontSize: '14px',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            {errors.form}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
 
@@ -176,6 +212,7 @@ function Register() {
           <div style={{ textAlign: 'center' }}>
             <button
               type="submit"
+              disabled={loading}
               style={{
                 backgroundColor: '#42b72a',
                 color: '#ffffff',
@@ -184,11 +221,18 @@ function Register() {
                 fontWeight: '600',
                 border: 'none',
                 borderRadius: '6px',
-                cursor: 'pointer'
+                cursor: loading ? 'not-allowed' : 'pointer'
               }}
             >
-              Sign Up
+              {loading ? 'Signing up...' : 'Sign Up'}
             </button>
+          </div>
+
+          {/* Link to login */}
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <Link to="/" style={{ color: '#1877f2', fontSize: '14px' }}>
+              Already have an account? Log in
+            </Link>
           </div>
 
         </form>
