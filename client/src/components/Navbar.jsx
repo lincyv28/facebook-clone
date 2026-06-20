@@ -63,9 +63,18 @@ function Navbar() {
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 'bold',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            overflow: 'hidden'
           }}>
-            {user ? user.firstName[0] : 'U'}
+            {user && user.profileImage ? (
+              <img
+                src={`http://localhost:5000${user.profileImage}`}
+                alt="avatar"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              user ? user.firstName[0] : 'U'
+            )}
           </div>
           <span style={{ fontWeight: '600', fontSize: '15px' }}>
             {user ? user.firstName : 'User'}
