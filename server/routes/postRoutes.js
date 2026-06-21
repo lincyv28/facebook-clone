@@ -68,4 +68,71 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
   }
 });
 
+// GET SINGLE POST (for View Post Details)
+router.get('/:id', async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('user', 'firstName lastName profileImage');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    res.status(200).json(post);
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// UPDATE POST (only owner can edit)
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if logged-in user is the owner of this post
+    if (post.user.toString() !== req.userId) {
+      return res.status(403).json({ message: 'You can only edit your own posts' });
+    }
+
+    post.text = text;
+    await post.save();
+
+    const updatedPost = await Post.findById(post._id).populate('user', 'firstName lastName profileImage');
+
+    res.status(200).json({ message: 'Post updated successfully', post: updatedPost });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// DELETE POST (only owner can delete)
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if logged-in user is the owner of this post
+    if (post.user.toString() !== req.userId) {
+      return res.status(403).json({ message: 'You can only delete your own posts' });
+    }
+
+    await Post.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ message: 'Post deleted successfully' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

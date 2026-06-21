@@ -71,15 +71,16 @@ router.post('/login', async (req, res) => {
     );
 
     res.status(200).json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email
-      }
-    });
+    message: 'Login successful',
+    token,
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      profileImage: user.profileImage
+    }
+  });
 
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

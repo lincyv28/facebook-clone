@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
 import CreatePost from './CreatePost'
 
@@ -8,6 +9,11 @@ function Feed() {
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [editingPostId, setEditingPostId] = useState(null)
+  const [editText, setEditText] = useState('')
+
+  const token = localStorage.getItem('token')
+  const loggedInUser = JSON.parse(localStorage.getItem('user'))
 
   // Fetch posts for a given page
   const fetchPosts = async (pageNumber) => {
@@ -46,6 +52,53 @@ function Feed() {
     setHasMore(data.hasMore)
     setPage(nextPage)
     setLoadingMore(false)
+  }
+
+  // Start editing a post
+  const startEdit = (post) => {
+    setEditingPostId(post._id)
+    setEditText(post.text)
+  }
+
+  // Cancel editing
+  const cancelEdit = () => {
+    setEditingPostId(null)
+    setEditText('')
+  }
+
+  // Save edited post
+  const saveEdit = async (postId) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/posts/${postId}`,
+        { text: editText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      // Update the post in the local list
+      setPosts(posts.map((p) => (p._id === postId ? response.data.post : p)))
+      setEditingPostId(null)
+      setEditText('')
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update post')
+    }
+  }
+
+  // Delete a post
+  const deletePost = async (postId) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this post?')
+    if (!confirmDelete) return
+
+    try {
+      await axios.delete(`http://localhost:5000/api/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      // Remove the post from local list
+      setPosts(posts.filter((p) => p._id !== postId))
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete post')
+    }
   }
 
   return (
@@ -87,99 +140,195 @@ function Feed() {
       )}
 
       {/* Render posts */}
-      {!loading && posts.map((post) => (
-        <div key={post._id} style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          padding: '16px',
-          marginBottom: '16px',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-        }}>
-          {/* Post Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '12px'
+      {!loading && posts.map((post) => {
+        const isOwner = loggedInUser && post.user._id === loggedInUser.id
+
+        return (
+          <div key={post._id} style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '16px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
           }}>
+            {/* Post Header */}
             <div style={{
-              backgroundColor: '#e4e6eb',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              overflow: 'hidden'
+              justifyContent: 'space-between',
+              marginBottom: '12px'
             }}>
-              {post.user.profileImage ? (
-                <img
-                  src={`http://localhost:5000${post.user.profileImage}`}
-                  alt="avatar"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                post.user.firstName[0]
+              <Link to={`/post/${post._id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+                <div style={{
+                  backgroundColor: '#e4e6eb',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  overflow: 'hidden'
+                }}>
+                  {post.user.profileImage ? (
+                    <img
+                      src={`http://localhost:5000${post.user.profileImage}`}
+                      alt="avatar"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    post.user.firstName[0]
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '15px' }}>
+                    {post.user.firstName} {post.user.lastName}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#65676b' }}>
+                    {new Date(post.createdAt).toLocaleString()}
+                  </div>
+                </div>
+              </Link>
+
+              {/* Edit/Delete menu - only for post owner */}
+              {isOwner && editingPostId !== post._id && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => startEdit(post)}
+                    style={{
+                      backgroundColor: '#f0f2f5',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deletePost(post._id)}
+                    style={{
+                      backgroundColor: '#f0f2f5',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      color: '#e41e3f'
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               )}
             </div>
-            <div>
-              <div style={{ fontWeight: '600', fontSize: '15px' }}>
-                {post.user.firstName} {post.user.lastName}
+
+            {/* Edit mode */}
+            {editingPostId === post._id ? (
+              <div style={{ marginBottom: '12px' }}>
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    fontSize: '15px',
+                    border: '1px solid #ccd0d5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                    resize: 'none',
+                    marginBottom: '8px'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => saveEdit(post._id)}
+                    style={{
+                      backgroundColor: '#1877f2',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    style={{
+                      backgroundColor: '#f0f2f5',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div style={{ fontSize: '13px', color: '#65676b' }}>
-                {new Date(post.createdAt).toLocaleString()}
-              </div>
+            ) : (
+              <>
+                {/* Post Text */}
+                {post.text && (
+                  <div style={{ fontSize: '15px', marginBottom: '12px' }}>
+                    {post.text}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Post Image */}
+            {post.image && (
+              <img
+                src={`http://localhost:5000${post.image}`}
+                alt="Post"
+                style={{
+                  width: '100%',
+                  maxHeight: '400px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  marginBottom: '12px'
+                }}
+              />
+            )}
+
+            {/* Post Actions */}
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              borderTop: '1px solid #e4e6eb',
+              paddingTop: '8px'
+            }}>
+              {['Like', 'Comment', 'Share'].map((action) => (
+                <button key={action} style={{
+                  flex: 1,
+                  padding: '8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#65676b'
+                }}>
+                  {action}
+                </button>
+              ))}
             </div>
           </div>
-
-          {/* Post Text */}
-          {post.text && (
-            <div style={{ fontSize: '15px', marginBottom: '12px' }}>
-              {post.text}
-            </div>
-          )}
-
-          {/* Post Image */}
-          {post.image && (
-            <img
-              src={`http://localhost:5000${post.image}`}
-              alt="Post"
-              style={{
-                width: '100%',
-                maxHeight: '400px',
-                objectFit: 'cover',
-                borderRadius: '8px',
-                marginBottom: '12px'
-              }}
-            />
-          )}
-
-          {/* Post Actions */}
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            borderTop: '1px solid #e4e6eb',
-            paddingTop: '8px'
-          }}>
-            {['Like', 'Comment', 'Share'].map((action) => (
-              <button key={action} style={{
-                flex: 1,
-                padding: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                cursor: 'pointer',
-                borderRadius: '4px',
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#65676b'
-              }}>
-                {action}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
+        )
+      })}
 
       {/* Load More button */}
       {!loading && hasMore && (
