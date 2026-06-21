@@ -15,6 +15,20 @@ function Feed() {
   const token = localStorage.getItem('token')
   const loggedInUser = JSON.parse(localStorage.getItem('user'))
 
+  // Like / Unlike a post
+  const handleLike = async (postId) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/posts/${postId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setPosts(posts.map((p) => (p._id === postId ? response.data.post : p)))
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   // Fetch posts for a given page
   const fetchPosts = async (pageNumber) => {
     try {
@@ -303,15 +317,29 @@ function Feed() {
               />
             )}
 
+            {/* Like count display */}
+            {post.likes.length > 0 && (
+              <div style={{
+                fontSize: '13px',
+                color: '#65676b',
+                marginBottom: '8px',
+                borderTop: '1px solid #e4e6eb',
+                paddingTop: '8px'
+              }}>
+                👍 {post.likes.length} {post.likes.length === 1 ? 'like' : 'likes'}
+              </div>
+            )}
+
             {/* Post Actions */}
             <div style={{
               display: 'flex',
               gap: '8px',
-              borderTop: '1px solid #e4e6eb',
-              paddingTop: '8px'
+              borderTop: post.likes.length > 0 ? 'none' : '1px solid #e4e6eb',
+              paddingTop: post.likes.length > 0 ? '0' : '8px'
             }}>
-              {['Like', 'Comment', 'Share'].map((action) => (
-                <button key={action} style={{
+              <button
+                onClick={() => handleLike(post._id)}
+                style={{
                   flex: 1,
                   padding: '8px',
                   border: 'none',
@@ -320,11 +348,37 @@ function Feed() {
                   borderRadius: '4px',
                   fontSize: '15px',
                   fontWeight: '600',
-                  color: '#65676b'
-                }}>
-                  {action}
-                </button>
-              ))}
+                  color: loggedInUser && post.likes.includes(loggedInUser.id) ? '#1877f2' : '#65676b'
+                }}
+              >
+                Like
+              </button>
+              <button style={{
+                flex: 1,
+                padding: '8px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#65676b'
+              }}>
+                Comment
+              </button>
+              <button style={{
+                flex: 1,
+                padding: '8px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#65676b'
+              }}>
+                Share
+              </button>
             </div>
           </div>
         )

@@ -135,4 +135,34 @@ router.delete('/:id', protect, async (req, res) => {
   }
 });
 
+// LIKE / UNLIKE POST (toggle)
+router.put('/:id/like', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const alreadyLiked = post.likes.includes(req.userId);
+
+    if (alreadyLiked) {
+      // Unlike - remove userId from likes array
+      post.likes = post.likes.filter((id) => id.toString() !== req.userId);
+    } else {
+      // Like - add userId to likes array
+      post.likes.push(req.userId);
+    }
+
+    await post.save();
+
+    const updatedPost = await Post.findById(post._id).populate('user', 'firstName lastName profileImage');
+
+    res.status(200).json({ post: updatedPost });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
