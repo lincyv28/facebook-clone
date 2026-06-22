@@ -15,7 +15,8 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('user', 'firstName lastName profileImage');
+      .populate('user', 'firstName lastName profileImage')
+      .populate('comments.user', 'firstName lastName profileImage');
 
     const totalPosts = await Post.countDocuments();
     const hasMore = skip + posts.length < totalPosts;
@@ -71,7 +72,9 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
 // GET SINGLE POST (for View Post Details)
 router.get('/:id', async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate('user', 'firstName lastName profileImage');
+    const post = await Post.findById(req.params.id)
+      .populate('user', 'firstName lastName profileImage')
+      .populate('comments.user', 'firstName lastName profileImage');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -157,6 +160,74 @@ router.put('/:id/like', protect, async (req, res) => {
     await post.save();
 
     const updatedPost = await Post.findById(post._id).populate('user', 'firstName lastName profileImage');
+
+    res.status(200).json({ post: updatedPost });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// ADD COMMENT
+router.post('/:id/comment', protect, async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ message: 'Comment text is required' });
+    }
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    post.comments.push({
+      user: req.userId,
+      text: text
+    });
+
+    await post.save();
+
+    const updatedPost = await Post.findById(post._id)
+      .populate('user', 'firstName lastName profileImage')
+      .populate('comments.user', 'firstName lastName profileImage');
+
+    res.status(200).json({ post: updatedPost });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// DELETE COMMENT (only comment owner can delete)
+router.delete('/:postId/comment/:commentId', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const comment = post.comments.find((c) => c._id.toString() === req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Check if logged-in user is the owner of this comment
+    if (comment.user.toString() !== req.userId) {
+      return res.status(403).json({ message: 'You can only delete your own comments' });
+    }
+
+    post.comments = post.comments.filter((c) => c._id.toString() !== req.params.commentId);
+
+    await post.save();
+
+    const updatedPost = await Post.findById(post._id)
+      .populate('user', 'firstName lastName profileImage')
+      .populate('comments.user', 'firstName lastName profileImage');
 
     res.status(200).json({ post: updatedPost });
 

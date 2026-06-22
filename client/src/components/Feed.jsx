@@ -11,6 +11,8 @@ function Feed() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [editingPostId, setEditingPostId] = useState(null)
   const [editText, setEditText] = useState('')
+  const [openCommentsFor, setOpenCommentsFor] = useState(null)
+  const [commentText, setCommentText] = useState('')
 
   const token = localStorage.getItem('token')
   const loggedInUser = JSON.parse(localStorage.getItem('user'))
@@ -26,6 +28,42 @@ function Feed() {
       setPosts(posts.map((p) => (p._id === postId ? response.data.post : p)))
     } catch (error) {
       console.log(error)
+    }
+  }
+
+  // Toggle comments section open/closed for a post
+  const toggleComments = (postId) => {
+    setOpenCommentsFor(openCommentsFor === postId ? null : postId)
+    setCommentText('')
+  }
+
+  // Add a comment to a post
+  const handleAddComment = async (postId) => {
+    if (!commentText.trim()) return
+
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/posts/${postId}/comment`,
+        { text: commentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setPosts(posts.map((p) => (p._id === postId ? response.data.post : p)))
+      setCommentText('')
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  // Delete a comment
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/posts/${postId}/comment/${commentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setPosts(posts.map((p) => (p._id === postId ? response.data.post : p)))
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete comment')
     }
   }
 
@@ -155,7 +193,7 @@ function Feed() {
 
       {/* Render posts */}
       {!loading && posts.map((post) => {
-        const isOwner = loggedInUser && post.user._id === loggedInUser.id
+        const isOwner = loggedInUser && post.user._id === loggedInUser._id
 
         return (
           <div key={post._id} style={{
@@ -348,22 +386,24 @@ function Feed() {
                   borderRadius: '4px',
                   fontSize: '15px',
                   fontWeight: '600',
-                  color: loggedInUser && post.likes.includes(loggedInUser.id) ? '#1877f2' : '#65676b'
+                  color: loggedInUser && post.likes.includes(loggedInUser._id) ? '#1877f2' : '#65676b'
                 }}
               >
                 Like
               </button>
-              <button style={{
-                flex: 1,
-                padding: '8px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                cursor: 'pointer',
-                borderRadius: '4px',
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#65676b'
-              }}>
+              <button
+                onClick={() => toggleComments(post._id)}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#65676b'
+                }}>
                 Comment
               </button>
               <button style={{
@@ -379,7 +419,125 @@ function Feed() {
               }}>
                 Share
               </button>
-            </div>
+           </div>
+
+            {/* Comments Section */}
+            {openCommentsFor === post._id && (
+              <div style={{ marginTop: '12px', borderTop: '1px solid #e4e6eb', paddingTop: '12px' }}>
+
+                {/* Existing comments */}
+                {post.comments.map((comment) => (
+                  <div key={comment._id} style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '10px'
+                  }}>
+                    <div style={{
+                      backgroundColor: '#e4e6eb',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '13px',
+                      overflow: 'hidden',
+                      flexShrink: 0
+                    }}>
+                      {comment.user.profileImage ? (
+                        <img
+                          src={`http://localhost:5000${comment.user.profileImage}`}
+                          alt="avatar"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        comment.user.firstName[0]
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        backgroundColor: '#f0f2f5',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        display: 'inline-block'
+                      }}>
+                        <div style={{ fontWeight: '600', fontSize: '13px' }}>
+                          {comment.user.firstName} {comment.user.lastName}
+                        </div>
+                        <div style={{ fontSize: '14px' }}>
+                          {comment.text}
+                        </div>
+                      </div>
+
+                      {/* Delete link - only for comment owner */}
+                      {loggedInUser && comment.user._id === loggedInUser._id && (
+                        <div
+                          onClick={() => handleDeleteComment(post._id, comment._id)}
+                          style={{
+                            fontSize: '12px',
+                            color: '#65676b',
+                            cursor: 'pointer',
+                            marginTop: '2px',
+                            paddingLeft: '4px',
+                            fontWeight: '600'
+                          }}
+                        >
+                          Delete
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add comment input */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+                  <div style={{
+                    backgroundColor: '#e4e6eb',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '13px',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}>
+                    {loggedInUser && loggedInUser.profileImage ? (
+                      <img
+                        src={`http://localhost:5000${loggedInUser.profileImage}`}
+                        alt="avatar"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      loggedInUser ? loggedInUser.firstName[0] : 'U'
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Write a comment..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddComment(post._id)
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#f0f2f5',
+                      border: 'none',
+                      borderRadius: '20px',
+                      padding: '8px 14px',
+                      fontSize: '14px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
           </div>
         )
       })}
