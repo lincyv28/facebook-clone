@@ -9,6 +9,13 @@ function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false)
   const searchRef = useRef(null)
 
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const notifRef = useRef(null)
+
+  const token = localStorage.getItem('token')
+
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
@@ -43,11 +50,56 @@ function Navbar() {
     }
   }
 
-  // Close dropdown when clicking outside the search box
+  // Fetch notifications when navbar loads
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setNotifications(response.data.notifications)
+      setUnreadCount(response.data.unreadCount)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchNotifications()
+    // Refresh notifications every 15 seconds
+    const interval = setInterval(fetchNotifications, 15000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Toggle notification dropdown and mark as read
+  const toggleNotifDropdown = async () => {
+    const opening = !showNotifDropdown
+    setShowNotifDropdown(opening)
+
+    if (opening && unreadCount > 0) {
+      try {
+        await axios.put('http://localhost:5000/api/notifications/mark-read', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        setUnreadCount(0)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+  }
+
+  const goToNotificationPost = (postId) => {
+    setShowNotifDropdown(false)
+    navigate(`/post/${postId}`)
+  }
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowDropdown(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -216,8 +268,120 @@ function Navbar() {
         )}
       </div>
 
-      {/* Right side - User info + Logout */}
+      {/* Right side - Notifications + User info + Logout */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+        {/* Notification bell */}
+        <div ref={notifRef} style={{ position: 'relative' }}>
+          <div
+            onClick={toggleNotifDropdown}
+            style={{
+              backgroundColor: '#e4e6eb',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '20px',
+              cursor: 'pointer',
+              position: 'relative'
+            }}
+          >
+            🔔
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                backgroundColor: '#e41e3f',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                fontSize: '11px',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
+
+          {/* Notification dropdown */}
+          {showNotifDropdown && (
+            <div style={{
+              position: 'absolute',
+              top: '50px',
+              right: 0,
+              width: '340px',
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+              maxHeight: '420px',
+              overflowY: 'auto',
+              padding: '8px'
+            }}>
+              <div style={{ fontSize: '17px', fontWeight: '700', padding: '8px' }}>
+                Notifications
+              </div>
+
+              {notifications.length === 0 && (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#65676b', fontSize: '14px' }}>
+                  No notifications yet
+                </div>
+              )}
+
+              {notifications.map((notif) => (
+                <div
+                  key={notif._id}
+                  onClick={() => goToNotificationPost(notif.post._id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    backgroundColor: notif.isRead ? 'transparent' : '#e7f3ff'
+                  }}
+                >
+                  <div style={{
+                    backgroundColor: '#e4e6eb',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}>
+                    {notif.sender.profileImage ? (
+                      <img src={`http://localhost:5000${notif.sender.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      notif.sender.firstName[0]
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px' }}>
+                      <strong>{notif.sender.firstName} {notif.sender.lastName}</strong>
+                      {notif.type === 'like' ? ' liked your post' : ' commented on your post'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#65676b', marginTop: '2px' }}>
+                      {new Date(notif.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* User info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
             backgroundColor: '#e4e6eb',

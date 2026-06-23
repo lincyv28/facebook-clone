@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const Post = require('../models/Post');
 const protect = require('../middleware/authMiddleware');
+const Notification = require('../models/Notification');
 
 const router = express.Router();
 // GET ALL POSTS (with pagination)
@@ -155,6 +156,16 @@ router.put('/:id/like', protect, async (req, res) => {
     } else {
       // Like - add userId to likes array
       post.likes.push(req.userId);
+
+      // Create a notification, but not if you're liking your own post
+      if (post.user.toString() !== req.userId) {
+        await Notification.create({
+          recipient: post.user,
+          sender: req.userId,
+          type: 'like',
+          post: post._id
+        });
+      }
     }
 
     await post.save();
@@ -189,6 +200,16 @@ router.post('/:id/comment', protect, async (req, res) => {
     });
 
     await post.save();
+
+    // Create a notification, but not if you're commenting on your own post
+    if (post.user.toString() !== req.userId) {
+      await Notification.create({
+        recipient: post.user,
+        sender: req.userId,
+        type: 'comment',
+        post: post._id
+      });
+    }
 
     const updatedPost = await Post.findById(post._id)
       .populate('user', 'firstName lastName profileImage')
