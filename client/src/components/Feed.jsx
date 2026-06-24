@@ -21,7 +21,7 @@ function Feed() {
   const handleLike = async (postId) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/posts/${postId}/like`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -43,7 +43,7 @@ function Feed() {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/posts/${postId}/comment`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/comment`,
         { text: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -58,7 +58,7 @@ function Feed() {
   const handleDeleteComment = async (postId, commentId) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5000/api/posts/${postId}/comment/${commentId}`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${postId}/comment/${commentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       setPosts(posts.map((p) => (p._id === postId ? response.data.post : p)))
@@ -70,7 +70,7 @@ function Feed() {
   // Fetch posts for a given page
   const fetchPosts = async (pageNumber) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/posts?page=${pageNumber}`)
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/posts?page=${pageNumber}`)
       return response.data
     } catch (error) {
       console.log(error)
@@ -122,7 +122,7 @@ function Feed() {
   const saveEdit = async (postId) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/posts/${postId}`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${postId}`,
         { text: editText },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -142,7 +142,7 @@ function Feed() {
     if (!confirmDelete) return
 
     try {
-      await axios.delete(`http://localhost:5000/api/posts/${postId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/posts/${postId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -224,7 +224,7 @@ function Feed() {
                 }}>
                   {post.user.profileImage ? (
                     <img
-                      src={`http://localhost:5000${post.user.profileImage}`}
+                      src={`${import.meta.env.VITE_API_URL}${post.user.profileImage}`}
                       alt="avatar"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -343,7 +343,7 @@ function Feed() {
             {/* Post Image */}
             {post.image && (
               <img
-                src={`http://localhost:5000${post.image}`}
+                src={`${import.meta.env.VITE_API_URL}${post.image}`}
                 alt="Post"
                 style={{
                   width: '100%',
@@ -447,7 +447,7 @@ function Feed() {
                     }}>
                       {comment.user.profileImage ? (
                         <img
-                          src={`http://localhost:5000${comment.user.profileImage}`}
+                          src={`${import.meta.env.VITE_API_URL}${comment.user.profileImage}`}
                           alt="avatar"
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
@@ -508,7 +508,7 @@ function Feed() {
                   }}>
                     {loggedInUser && loggedInUser.profileImage ? (
                       <img
-                        src={`http://localhost:5000${loggedInUser.profileImage}`}
+                        src={`${import.meta.env.VITE_API_URL}${loggedInUser.profileImage}`}
                         alt="avatar"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />

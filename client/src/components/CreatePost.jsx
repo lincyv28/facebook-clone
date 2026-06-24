@@ -41,7 +41,7 @@ function CreatePost({ onPostCreated }) {
     setLoading(true)
 
     try {
-      const response = await axios.post('http://localhost:5000/api/posts', formData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/posts`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

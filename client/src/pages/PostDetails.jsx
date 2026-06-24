@@ -16,7 +16,7 @@ function PostDetails() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/posts/${id}`)
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/posts/${id}`)
         setPost(response.data)
       } catch (err) {
         setError('Post not found')
@@ -31,7 +31,7 @@ function PostDetails() {
   const handleLike = async () => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/posts/${id}/like`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${id}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -46,7 +46,7 @@ function PostDetails() {
     if (!commentText.trim()) return
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/posts/${id}/comment`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${id}/comment`,
         { text: commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -61,7 +61,7 @@ function PostDetails() {
   const handleDeleteComment = async (commentId) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5000/api/posts/${id}/comment/${commentId}`,
+        `${import.meta.env.VITE_API_URL}/api/posts/${id}/comment/${commentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       setPost(response.data.post)
@@ -143,7 +143,7 @@ function PostDetails() {
             }}>
               {post.user.profileImage ? (
                 <img
-                  src={`http://localhost:5000${post.user.profileImage}`}
+                  src={`${import.meta.env.VITE_API_URL}${post.user.profileImage}`}
                   alt="avatar"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
@@ -171,7 +171,7 @@ function PostDetails() {
           {/* Post Image */}
           {post.image && (
             <img
-              src={`http://localhost:5000${post.image}`}
+              src={`${import.meta.env.VITE_API_URL}${post.image}`}
               alt="Post"
               style={{
                 width: '100%',
@@ -272,7 +272,7 @@ function PostDetails() {
                 }}>
                   {comment.user.profileImage ? (
                     <img
-                      src={`http://localhost:5000${comment.user.profileImage}`}
+                      src={`${import.meta.env.VITE_API_URL}${comment.user.profileImage}`}
                       alt="avatar"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -332,7 +332,7 @@ function PostDetails() {
               }}>
                 {loggedInUser && loggedInUser.profileImage ? (
                   <img
-                    src={`http://localhost:5000${loggedInUser.profileImage}`}
+                    src={`${import.meta.env.VITE_API_URL}${loggedInUser.profileImage}`}
                     alt="avatar"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

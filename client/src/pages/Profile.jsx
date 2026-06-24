@@ -16,7 +16,7 @@ function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/users/profile', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         setUser(response.data)
@@ -37,7 +37,7 @@ function Profile() {
 
     try {
       const response = await axios.put(
-        'http://localhost:5000/api/users/profile',
+        `${import.meta.env.VITE_API_URL}/api/users/profile`,
         { firstName, lastName },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -68,7 +68,7 @@ function Profile() {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/users/profile/upload',
+        `${import.meta.env.VITE_API_URL}/api/users/profile/upload`,
         formData,
         {
           headers: {
@@ -116,7 +116,7 @@ function Profile() {
             <img
               src={
                 user.profileImage
-                  ? `http://localhost:5000${user.profileImage}`
+                  ? `${import.meta.env.VITE_API_URL}${user.profileImage}`
                   : 'https://via.placeholder.com/120/e4e6eb/65676b?text=No+Image'
               }
               alt="Profile"

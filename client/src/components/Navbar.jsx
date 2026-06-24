@@ -42,7 +42,7 @@ function Navbar() {
 
   const performSearch = async (query) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/search?q=${query}`)
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/search?q=${query}`)
       setResults(response.data)
       setShowDropdown(true)
     } catch (error) {
@@ -53,7 +53,7 @@ function Navbar() {
   // Fetch notifications when navbar loads
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/notifications', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setNotifications(response.data.notifications)
@@ -77,7 +77,7 @@ function Navbar() {
 
     if (opening && unreadCount > 0) {
       try {
-        await axios.put('http://localhost:5000/api/notifications/mark-read', {}, {
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/notifications/mark-read`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         })
         setUnreadCount(0)
@@ -201,7 +201,7 @@ function Navbar() {
                       flexShrink: 0
                     }}>
                       {u.profileImage ? (
-                        <img src={`http://localhost:5000${u.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={`${import.meta.env.VITE_API_URL}${u.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         u.firstName[0]
                       )}
@@ -246,7 +246,7 @@ function Navbar() {
                       flexShrink: 0
                     }}>
                       {p.user.profileImage ? (
-                        <img src={`http://localhost:5000${p.user.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={`${import.meta.env.VITE_API_URL}${p.user.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         p.user.firstName[0]
                       )}
@@ -361,7 +361,7 @@ function Navbar() {
                     flexShrink: 0
                   }}>
                     {notif.sender.profileImage ? (
-                      <img src={`http://localhost:5000${notif.sender.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={`${import.meta.env.VITE_API_URL}${notif.sender.profileImage}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       notif.sender.firstName[0]
                     )}
@@ -397,7 +397,7 @@ function Navbar() {
           }}>
             {user && user.profileImage ? (
               <img
-                src={`http://localhost:5000${user.profileImage}`}
+                src={`${import.meta.env.VITE_API_URL}${user.profileImage}`}
                 alt="avatar"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
